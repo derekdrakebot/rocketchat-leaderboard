@@ -32,31 +32,43 @@
     </div>
 
     <script>
-        // Ensure we handle the path correctly for GitHub Pages sub-directories
         async function loadData() {
             const body = document.getElementById('leaderboard-body');
+            const startDate = "2025-12-01"; // Match this to your Python script date
+            
             try {
-                const response = await fetch('./data.json');
+                const response = await fetch(`./data.json?t=${new Date().getTime()}`);
                 if (!response.ok) throw new Error('Data not found');
                 const data = await response.json();
                 
-                body.innerHTML = ''; // Clear loading message
+                body.innerHTML = ''; 
                 
                 data.forEach((user, index) => {
+                    // Generates the Global Search URL: 
+                    // author:username + created date + type (Issues includes PRs in global search)
+                    const searchUrl = `https://github.com/search?q=author:${user.author}+created:>=${startDate}`;
+                    
+                    const total = user.open_prs + user.merged_prs + user.issues;
+
                     const row = `
-                        <tr class="hover:bg-gray-800 transition-colors">
+                        <tr class="hover:bg-gray-800 transition-colors border-b border-gray-800">
                             <td class="px-4 py-4 font-mono text-gray-500">#${index + 1}</td>
-                            <td class="px-4 py-4 font-medium">
-                                <a href="https://github.com/${user.author}" target="_blank" class="text-blue-400 hover:underline">@${user.author}</a>
+                            <td class="px-4 py-4 font-medium text-blue-400">
+                                <a href="${searchUrl}" target="_blank" class="hover:underline flex flex-col">
+                                    <span>@${user.author}</span>
+                                    <span class="text-[10px] text-gray-500 uppercase tracking-wider">View Activity ↗</span>
+                                </a>
                             </td>
                             <td class="px-4 py-4 text-center text-yellow-400">${user.open_prs}</td>
                             <td class="px-4 py-4 text-center text-green-400">${user.merged_prs}</td>
                             <td class="px-4 py-4 text-center text-purple-400">${user.issues}</td>
+                            <td class="px-4 py-4 text-center font-bold text-white bg-gray-800/50">${total}</td>
                         </tr>`;
                     body.innerHTML += row;
                 });
             } catch (error) {
-                body.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-red-400">Error: data.json not found. Please wait for the GitHub Action to run.</td></tr>`;
+                console.error(error);
+                body.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-red-400">Error loading data.</td></tr>`;
             }
         }
         loadData();
